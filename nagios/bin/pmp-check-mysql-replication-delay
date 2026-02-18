@@ -148,14 +148,14 @@ get_slave_status() {
   if [ -z "$1" ]; then
      if [ "${OPT_MASTERCONN}" ]; then
         # MariaDB multi-source replication
-        mysql_exec "SHOW SLAVE '${OPT_MASTERCONN}' STATUS\G" > "${TEMP_SLAVEDATA}"
+        mysql_exec "SHOW REPLICA '${OPT_MASTERCONN}' STATUS\G" > "${TEMP_SLAVEDATA}"
      elif [ "${OPT_CHANNEL}" ]; then
-	mysql_exec "SHOW SLAVE STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP_SLAVEDATA}"
+	mysql_exec "SHOW REPLICA STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP_SLAVEDATA}"
      else
         # Leverage lock-free SHOW SLAVE STATUS if available
-        mysql_exec "SHOW SLAVE STATUS NONBLOCKING\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
-        mysql_exec "SHOW SLAVE STATUS NOLOCK\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
-        mysql_exec "SHOW SLAVE STATUS\G" > "${TEMP_SLAVEDATA}"
+        mysql_exec "SHOW REPLICA STATUS NONBLOCKING\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
+        mysql_exec "SHOW REPLICA STATUS NOLOCK\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
+        mysql_exec "SHOW REPLICA STATUS\G" > "${TEMP_SLAVEDATA}"
      fi
      MYSQL_CONN=$?
   else
