@@ -152,9 +152,6 @@ get_slave_status() {
      elif [ "${OPT_CHANNEL}" ]; then
 	mysql_exec "SHOW REPLICA STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP_SLAVEDATA}"
      else
-        # Leverage lock-free SHOW SLAVE STATUS if available
-        mysql_exec "SHOW REPLICA STATUS NONBLOCKING\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
-        mysql_exec "SHOW REPLICA STATUS NOLOCK\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
         mysql_exec "SHOW REPLICA STATUS\G" > "${TEMP_SLAVEDATA}"
      fi
      MYSQL_CONN=$?
@@ -244,7 +241,7 @@ This plugin executes the following commands against MySQL:
 
 =item *
 
-C<SHOW SLAVE STATUS [NONBLOCKING|NOLOCK]>
+C<SHOW SLAVE STATUS>
 
 or
 

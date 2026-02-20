@@ -63,14 +63,12 @@ main() {
    if [ -z "$1" ]; then
       if [ "${OPT_MASTERCONN}" ]; then
          # MariaDB multi-source replication
-         mysql_exec "SHOW SLAVE '${OPT_MASTERCONN}' STATUS\G" > "${TEMP}"
+         mysql_exec "SHOW REPLICA '${OPT_MASTERCONN}' STATUS\G" > "${TEMP}"
       elif [ "${OPT_CHANNEL}" ]; then
-        mysql_exec "SHOW SLAVE STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP}" 
+        mysql_exec "SHOW REPLICA STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP}" 
       else
          # Leverage lock-free SHOW SLAVE STATUS if available
-         mysql_exec "SHOW SLAVE STATUS NONBLOCKING\G" > "${TEMP}" 2>/dev/null ||
-         mysql_exec "SHOW SLAVE STATUS NOLOCK\G" > "${TEMP}" 2>/dev/null ||
-         mysql_exec "SHOW SLAVE STATUS\G" > "${TEMP}"
+         mysql_exec "SHOW REPLICA STATUS\G" > "${TEMP}"
       fi
    else
       # This is just for testing.  /dev/null it.
@@ -212,7 +210,7 @@ This plugin executes the following commands against MySQL:
 
 =item *
 
-C<SHOW SLAVE STATUS [NONBLOCKING|NOLOCK]>
+C<SHOW REPLICA STATUS>
 
 =back
 
