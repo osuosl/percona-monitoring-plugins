@@ -78,11 +78,11 @@ build_deb() {
     echo "Package created: $TARGET/$PKG"
 }
 
-for p in percona-nagios-plugins percona-cacti-templates percona-zabbix-templates ; do 
+for p in percona-nagios-plugins ; do 
     build_rpm $p
     echo '==================' 
-    build_deb $p
-    echo '==================' 
+    # build_deb $p
+    # echo '==================' 
 done
 
 rm -rf $WORK_DIR
