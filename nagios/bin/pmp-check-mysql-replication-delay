@@ -65,6 +65,8 @@ main() {
       fi
    fi
 
+   MYSQL_VERSION=$(get_mysql_version 2>/dev/null || echo "0")
+
    # Get replication delay from a heartbeat table or from SHOW SLAVE STATUS.
    get_slave_status $1
    if [ "${OPT_TABLE}" ]; then
@@ -130,6 +132,18 @@ mysql_exec() {
       ${OPT_USER:+-u"${OPT_USER}"} ${OPT_PASS:+-p"${OPT_PASS}"} \
       ${OPT_SOCK:+-S"${OPT_SOCK}"} -ss -e "$1"
 }
+# ########################################################################
+# Detect MySQL version to determine which syntax to use
+# ########################################################################
+get_mysql_version() {
+    # Get version string (e.g., "8.4.2" or "5.7.40")
+    local version_str=$(mysql_exec "SELECT VERSION()" | cut -d'-' -f1)
+    local major=$(echo "$version_str" | cut -d'.' -f1)
+    local minor=$(echo "$version_str" | cut -d'.' -f2)
+    
+    # Return as comparable number (e.g., 8.4 -> 80400)
+    echo $((major * 10000 + minor * 100))
+}
 
 # ########################################################################
 # Determine whether this program is being executed directly, or sourced/included
@@ -145,17 +159,20 @@ is_not_sourced() {
 get_slave_status() {
   TEMP_SLAVEDATA=$(mktemp -t "${0##*/}.XXXXXX") || exit $?
   trap "rm -f '${TEMP_SLAVEDATA}' >/dev/null 2>&1" EXIT
+
+  local replica_syntax="SLAVE"  
+  if [ "$MYSQL_VERSION" -ge 80400 ]; then
+    replica_syntax="REPLICA"
+  fi
+
   if [ -z "$1" ]; then
      if [ "${OPT_MASTERCONN}" ]; then
         # MariaDB multi-source replication
-        mysql_exec "SHOW SLAVE '${OPT_MASTERCONN}' STATUS\G" > "${TEMP_SLAVEDATA}"
+        mysql_exec "SHOW $replica_syntax '${OPT_MASTERCONN}' STATUS\G" > "${TEMP_SLAVEDATA}"
      elif [ "${OPT_CHANNEL}" ]; then
-	mysql_exec "SHOW SLAVE STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP_SLAVEDATA}"
+	mysql_exec "SHOW $replica_syntax STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP_SLAVEDATA}"
      else
-        # Leverage lock-free SHOW SLAVE STATUS if available
-        mysql_exec "SHOW SLAVE STATUS NONBLOCKING\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
-        mysql_exec "SHOW SLAVE STATUS NOLOCK\G" > "${TEMP_SLAVEDATA}" 2>/dev/null ||
-        mysql_exec "SHOW SLAVE STATUS\G" > "${TEMP_SLAVEDATA}"
+        mysql_exec "SHOW $replica_syntax STATUS\G" > "${TEMP_SLAVEDATA}"
      fi
      MYSQL_CONN=$?
   else
@@ -244,7 +261,7 @@ This plugin executes the following commands against MySQL:
 
 =item *
 
-C<SHOW SLAVE STATUS [NONBLOCKING|NOLOCK]>
+C<SHOW SLAVE/REPLICA STATUS>
 
 or
 

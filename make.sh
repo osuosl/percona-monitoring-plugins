@@ -89,9 +89,9 @@ done
 
 # Generate Zabbix XML templates and agent configs
 FILE="release/code/zabbix/templates/zabbix_agent_template_percona_mysql_server_ht_2.0.9-sver${VERSION}.xml"
-python zabbix/bin/pmp-zabbix-template.py -o xml > "${FILE}"
+#python zabbix/bin/pmp-zabbix-template.py -o xml > "${FILE}"
 FILE="release/code/zabbix/templates/userparameter_percona_mysql.conf"
-python zabbix/bin/pmp-zabbix-template.py -o config > "${FILE}"
+#python zabbix/bin/pmp-zabbix-template.py -o config > "${FILE}"
 
 # Make the Nagios documentation into Sphinx .rst format.  The Cacti docs are
 # already in Sphinx format.
