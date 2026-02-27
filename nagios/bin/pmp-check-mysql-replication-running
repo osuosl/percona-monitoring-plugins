@@ -55,6 +55,13 @@ main() {
       fi
    fi
 
+   MYSQL_VERSION=$(get_mysql_version 2>/dev/null || echo "0")
+   local replica_syntax="SLAVE"  
+   if [ "$MYSQL_VERSION" -ge 80400 ]; then
+      replica_syntax="REPLICA"
+   fi
+
+
    # Get replication status into a temp file. TODO: move this into a subroutine
    # and test it.  But, if there is a commandline argument left over after
    # parsing options, then use that as the file instead.
@@ -63,12 +70,12 @@ main() {
    if [ -z "$1" ]; then
       if [ "${OPT_MASTERCONN}" ]; then
          # MariaDB multi-source replication
-         mysql_exec "SHOW REPLICA '${OPT_MASTERCONN}' STATUS\G" > "${TEMP}"
+         mysql_exec "SHOW $replica_syntax '${OPT_MASTERCONN}' STATUS\G" > "${TEMP}"
       elif [ "${OPT_CHANNEL}" ]; then
-        mysql_exec "SHOW REPLICA STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP}" 
+        mysql_exec "SHOW $replica_syntax STATUS FOR CHANNEL '${OPT_CHANNEL}'\G" > "${TEMP}" 
       else
          # Leverage lock-free SHOW SLAVE STATUS if available
-         mysql_exec "SHOW REPLICA STATUS\G" > "${TEMP}"
+         mysql_exec "SHOW $replica_syntax STATUS\G" > "${TEMP}"
       fi
    else
       # This is just for testing.  /dev/null it.
@@ -108,6 +115,18 @@ main() {
    fi
 
    echo $NOTE
+}
+# ########################################################################
+# Detect MySQL version to determine which syntax to use
+# ########################################################################
+get_mysql_version() {
+    # Get version string (e.g., "8.4.2" or "5.7.40")
+    local version_str=$(mysql_exec "SELECT VERSION()" | cut -d'-' -f1)
+    local major=$(echo "$version_str" | cut -d'.' -f1)
+    local minor=$(echo "$version_str" | cut -d'.' -f2)
+    
+    # Return as comparable number (e.g., 8.4 -> 80400)
+    echo $((major * 10000 + minor * 100))
 }
 
 # ########################################################################
